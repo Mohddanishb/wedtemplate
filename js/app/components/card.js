@@ -136,7 +136,7 @@ export const card = (() => {
             return `class="bg-theme-auto shadow p-3 mx-0 mt-0 mb-3 rounded-4"`;
         }
 
-        return `class="${!showHide.get('hidden').find((i) => i.uuid === c.uuid)['show'] ? 'd-none' : ''} overflow-x-scroll mw-100 border-start bg-theme-auto py-2 ps-2 pe-0 my-2 ms-2 me-0"`;
+        return `class="${!showHide.get('hidden').find((i) => i.uuid === c.uuid)['show'] ? 'd-none' : ''} overflow-x-auto mw-100 border-start bg-theme-auto py-2 ps-2 pe-0 my-2 ms-2 me-0"`;
     };
 
     /**
@@ -178,7 +178,7 @@ export const card = (() => {
         const data = util.convertMarkdownToHTML(util.escapeHtml(moreMaxLength ? (c.comment.slice(0, maxCommentLength) + '...') : c.comment));
 
         return head + `
-        <p class="text-theme-auto my-1 mx-0 p-0" style="white-space: pre-wrap !important; font-size: 0.95rem;" data-comment="${util.base64Encode(c.comment)}" id="content-${c.uuid}">${data}</p>
+        <p dir="auto" class="text-theme-auto my-1 mx-0 p-0" style="white-space: pre-wrap !important; font-size: 0.95rem;" data-comment="${util.base64Encode(c.comment)}" id="content-${c.uuid}">${data}</p>
         ${moreMaxLength ? `<p class="d-block mb-2 mt-0 mx-0 p-0"><a class="text-theme-auto" role="button" style="font-size: 0.85rem;" data-show="false" onclick="undangan.comment.showMore(this, '${c.uuid}')">Selengkapnya</a></p>` : ''}`;
     };
 
@@ -203,19 +203,13 @@ export const card = (() => {
      * @param {ReturnType<typeof dto.getCommentResponse>[]} cs
      * @returns {Promise<string>}
      */
-    const renderContentMany = (cs) => {
-        return gif.prepareCache()
-            .then(() => Promise.all(cs.map((i) => renderContent(i))))
-            .then((r) => r.join(''));
-    };
+    const renderContentMany = (cs) => Promise.all(cs.map((i) => renderContent(i))).then((r) => r.join(''));
 
     /**
      * @param {ReturnType<typeof dto.getCommentResponse>} cs
      * @returns {Promise<string>}
      */
-    const renderContentSingle = (cs) => {
-        return gif.prepareCache().then(() => renderContent(cs));
-    };
+    const renderContentSingle = (cs) => renderContent(cs);
 
     /**
      * @param {string} id 
@@ -232,7 +226,7 @@ export const card = (() => {
         <div class="d-block mb-2" id="comment-form-${id}">
             <div class="position-relative">
                 ${!gif.isActive() ? '' : `<button class="btn btn-secondary btn-sm rounded-4 shadow-sm me-1 my-1 position-absolute bottom-0 end-0" onclick="undangan.comment.gif.open('${id}')" aria-label="button gif" data-offline-disabled="false"><i class="fa-solid fa-photo-film"></i></button>`}
-                <textarea class="form-control shadow-sm rounded-4 mb-2" id="form-inner-${id}" minlength="1" maxlength="1000" placeholder="Type reply comment" rows="3" data-offline-disabled="false"></textarea>
+                <textarea dir="auto" class="form-control shadow-sm rounded-4 mb-2" id="form-inner-${id}" minlength="1" maxlength="1000" placeholder="Type reply comment" rows="3" data-offline-disabled="false"></textarea>
             </div>
         </div>
         <div class="d-none mb-2" id="gif-form-${id}"></div>
@@ -264,7 +258,7 @@ export const card = (() => {
             <option value="1" ${presence ? 'selected' : ''}>&#9989; Datang</option>
             <option value="2" ${presence ? '' : 'selected'}>&#10060; Berhalangan</option>
         </select>`}
-        ${!is_gif ? `<textarea class="form-control shadow-sm rounded-4 mb-2" id="form-inner-${id}" minlength="1" maxlength="1000" placeholder="Type update comment" rows="3" data-offline-disabled="false"></textarea>    
+        ${!is_gif ? `<textarea dir="auto" class="form-control shadow-sm rounded-4 mb-2" id="form-inner-${id}" minlength="1" maxlength="1000" placeholder="Type update comment" rows="3" data-offline-disabled="false"></textarea>    
         ` : `${!gif.isActive() ? '' : `<div class="d-none mb-2" id="gif-form-${id}"></div>`}`}
         <div class="d-flex justify-content-end align-items-center mb-0">
             <button style="font-size: 0.8rem;" onclick="undangan.comment.cancel(this, '${id}')" class="btn btn-sm btn-outline-auto rounded-4 py-0 me-1" data-offline-disabled="false">Cancel</button>

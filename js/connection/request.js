@@ -17,53 +17,67 @@ export const defaultJSON = {
     'Content-Type': 'application/json'
 };
 
-export const cacheName = 'request';
+export const cacheRequest = 'request';
 
-const singleton = (() => {
+export const pool = (() => {
     /**
-     * @type {Promise<Cache>|null}
+     * @type {Map<string, Cache>|null}
      */
-    let instance = null;
+    let cachePool = null;
 
     return {
         /**
-         * @returns {Promise<Cache>}
+         * @param {string} name
+         * @returns {Cache}
          */
-        getInstance: () => {
-            if (!instance) {
-                instance = window.caches.open(cacheName);
+        getInstance: (name) => {
+            if (!cachePool || !cachePool.has(name)) {
+                throw new Error(`please init cache first: ${name}`);
             }
 
-            return instance;
+            return cachePool.get(name);
         },
-        purge: () => {
-            instance = null;
+        /**
+         * @param {string} name 
+         * @returns {Promise<void>}
+         */
+        restart: async (name) => {
+            cachePool.set(name, null);
+            cachePool.delete(name);
+            await window.caches.delete(name);
+            await window.caches.open(name).then((c) => cachePool.set(name, c));
+        },
+        /**
+         * @param {function} callback
+         * @param {string[]} lists 
+         * @returns {void}
+         */
+        init: (callback, lists = []) => {
+            if (!window.isSecureContext) {
+                throw new Error('this application required secure context');
+            }
+
+            cachePool = new Map();
+            Promise.all(lists.concat([cacheRequest]).map((v) => window.caches.open(v).then((c) => cachePool.set(v, c)))).then(() => callback());
         },
     };
 })();
 
-export const removeCache = async () => {
-    if (!window.isSecureContext) {
-        return;
-    }
-
-    singleton.purge();
-    await window.caches.delete(cacheName);
-};
-
 /**
- * @param {Cache} cacheObject 
+ * @param {string} cacheName 
  */
-export const cacheWrapper = (cacheObject) => {
+export const cacheWrapper = (cacheName) => {
+    const cacheObject = pool.getInstance(cacheName);
+
     /**
      * @param {string|URL} input 
      * @param {Response} res 
      * @param {boolean} forceCache
      * @param {number} ttl
-     * @returns {Response}
+     * @returns {Promise<Response>}
      */
     const set = (input, res, forceCache, ttl) => res.clone().arrayBuffer().then((ab) => {
-        if (!res.ok || !window.isSecureContext) {
+        if (!res.ok) {
             return res;
         }
 
@@ -78,6 +92,10 @@ export const cacheWrapper = (cacheObject) => {
             if (!forceCache && headers.has('Expires')) {
                 const expTime = new Date(headers.get('Expires'));
                 ttl = Math.max(0, expTime.getTime() - now.getTime());
+            }
+
+            if (ttl === 0) {
+                throw new Error('Cache max age cannot be 0');
             }
 
             headers.set('Cache-Control', `public, max-age=${Math.floor(ttl / 1000)}`);
@@ -132,13 +150,11 @@ export const request = (method, path) => {
         method: String(method).toUpperCase(),
     };
 
-    window.addEventListener('offline', () => ac.abort(), { once: true });
-    window.addEventListener('popstate', () => ac.abort(), { once: true });
-
     let reqTtl = 0;
     let reqRetry = 0;
     let reqDelay = 0;
     let reqAttempts = 0;
+    let reqNoBody = false;
     let reqForceCache = false;
 
     /**
@@ -171,6 +187,15 @@ export const request = (method, path) => {
              * @returns {Promise<Response>}
              */
             const wrapperFetch = () => window.fetch(input, req).then(async (res) => {
+                if (reqNoBody) {
+                    ac.abort();
+                    return new Response(null, {
+                        status: res.status,
+                        statusText: res.statusText,
+                        headers: new Headers(res.headers),
+                    });
+                }
+
                 if (!res.ok || !callbackFunc) {
                     return res;
                 }
@@ -204,7 +229,7 @@ export const request = (method, path) => {
                 });
             });
 
-            if (reqTtl === 0 || !window.isSecureContext) {
+            if (reqTtl === 0 || reqNoBody) {
                 return wrapperFetch();
             }
 
@@ -213,16 +238,18 @@ export const request = (method, path) => {
                 return wrapperFetch();
             }
 
-            return singleton.getInstance().then(cacheWrapper).then((cw) => cw.has(input).then((res) => {
+            const cw = cacheWrapper(cacheRequest);
+
+            return cw.has(input).then((res) => {
                 if (res) {
                     return Promise.resolve(res);
                 }
 
                 return cw.del(input).then(wrapperFetch).then((r) => cw.set(input, r, reqForceCache, reqTtl));
-            }));
+            });
         };
 
-        if (reqRetry === 0 && reqDelay === 0) {
+        if (reqRetry === 0 || reqDelay === 0) {
             return abstractFetch();
         }
 
@@ -256,11 +283,11 @@ export const request = (method, path) => {
 
     /**
      * @param {Response} res 
-     * @returns {Response}
+     * @returns {Promise<Response>}
      */
     const baseDownload = (res) => {
         if (res.status !== HTTP_STATUS_OK) {
-            return res;
+            return Promise.resolve(res);
         }
 
         const exist = document.querySelector('a[download]');
@@ -301,11 +328,11 @@ export const request = (method, path) => {
 
             return baseFetch(new URL(path, document.body.getAttribute('data-url'))).then((res) => {
                 if (downName && res.ok) {
-                    return {
-                        code: res.status,
-                        data: baseDownload(res),
+                    return baseDownload(res).then((r) => ({
+                        code: r.status,
+                        data: r,
                         error: null,
-                    };
+                    }));
                 }
 
                 return res.json().then((json) => {
@@ -346,10 +373,22 @@ export const request = (method, path) => {
             return this;
         },
         /**
+         * @param {number} [ttl=21600000]
          * @returns {ReturnType<typeof request>}
          */
-        withForceCache() {
+        withForceCache(ttl = 1000 * 60 * 60 * 6) {
             reqForceCache = true;
+            if (reqTtl === 0) {
+                reqTtl = ttl;
+            }
+
+            return this;
+        },
+        /**
+         * @returns {ReturnType<typeof request>}
+         */
+        withNoBody() {
+            reqNoBody = true;
 
             return this;
         },
@@ -404,7 +443,7 @@ export const request = (method, path) => {
          */
         default(header = null) {
             req.headers = new Headers(header ?? {});
-            return baseFetch(path).then((res) => downName ? baseDownload(res) : res);
+            return baseFetch(path).then((res) => downName ? baseDownload(res) : Promise.resolve(res));
         },
         /**
          * @param {string} token

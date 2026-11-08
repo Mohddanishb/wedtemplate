@@ -29,6 +29,9 @@ Untuk kamu yang ingin melihat demo terlebih dahulu:
 
 > Jika kamu punya pertanyaan, gunakan fitur `discussions` agar bisa dibaca juga oleh teman-teman lainnya.
 
+> [!WARNING]  
+> Gunakan versi 3.14.0, untuk versi 4 masih tahap pengembangan dan berpotensi teredapat bug 🐛
+
 ## 🔥 Deployment API
 
 - Video\
@@ -44,9 +47,9 @@ Untuk kamu yang ingin mencoba secara gratis:
 
 ## ⚙️ Tech stack
 
-- Bootstrap 5.3.7
+- Bootstrap 5.3.8
 - AOS 2.3.4
-- Fontawesome 6.7.2
+- Fontawesome 7.1.0
 - Canvas Confetti 1.9.3
 - Google Fonts
 - Vanilla JS

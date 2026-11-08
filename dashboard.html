@@ -14,9 +14,8 @@
     <meta name="theme-color" content="#f8f9fa">
     <meta name="color-scheme" content="dark light">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="shortcut icon" type="image/x-icon" href="https://ulems.my.id/assets/favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://ulems.my.id/assets/images/icon-192x192.png">
     <link rel="apple-touch-icon" sizes="192x192" href="https://ulems.my.id/assets/images/icon-192x192.png">
-    <link rel="icon" type="image/x-icon" href="https://ulems.my.id/assets/favicon.ico">
 
     <!-- Preconnect CDN -->
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
@@ -28,20 +27,20 @@
 
     <!-- Preload Resources -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Josefin+Sans&display=swap" as="style">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" integrity="sha256-zRgmWB5PK4CvTx4FiXsxbHaYRBBjz/rvu97sOC7kzXI=" crossorigin="anonymous" as="style">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous" as="style">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha256-NfRUfZNkERrKSFA0c1a8VmCplPDYtpTYj5lQmKe1R/o=" crossorigin="anonymous" as="script">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha256-2FMn2Zx6PuH5tdBQDRNwrOo60ts5wWPC9R8jK67b3t4=" crossorigin="anonymous" as="style">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css" integrity="sha256-4rTIfo5GQTi/7UJqoyUJQKzxW8VN/YBH31+Cy+vTZj4=" crossorigin="anonymous" as="style">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha256-5P1JGBOIxI7FBAvT/mb1fCnI5n/NhQKzNUuW7Hq0fMc=" crossorigin="anonymous" as="script">
 
     <!-- Font -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Josefin+Sans&display=swap">
 
     <!-- Dependencies CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" integrity="sha256-zRgmWB5PK4CvTx4FiXsxbHaYRBBjz/rvu97sOC7kzXI=" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" integrity="sha256-2FMn2Zx6PuH5tdBQDRNwrOo60ts5wWPC9R8jK67b3t4=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css" integrity="sha256-4rTIfo5GQTi/7UJqoyUJQKzxW8VN/YBH31+Cy+vTZj4=" crossorigin="anonymous">
     <link rel="stylesheet" href="./css/admin.css">
 
     <!-- Dependencies JS -->
-    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha256-NfRUfZNkERrKSFA0c1a8VmCplPDYtpTYj5lQmKe1R/o=" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha256-5P1JGBOIxI7FBAvT/mb1fCnI5n/NhQKzNUuW7Hq0fMc=" crossorigin="anonymous"></script>
     <script src="./dist/admin.js"></script>
 </head>
 
@@ -230,7 +229,7 @@
 
                                         <div class="position-relative">
                                             <button class="btn btn-secondary btn-sm rounded-4 shadow-sm me-1 my-1 position-absolute bottom-0 end-0" onclick="undangan.comment.gif.open(undangan.comment.gif.default)" aria-label="button gif" data-offline-disabled="false"><i class="fa-solid fa-photo-film"></i></button>
-                                            <textarea class="form-control shadow-sm mb-3 rounded-4" id="form-comment" name="form-comment" rows="3" minlength="1" maxlength="1000" placeholder="Type to comment" data-offline-disabled="false"></textarea>
+                                            <textarea dir="auto" class="form-control shadow-sm mb-3 rounded-4" id="form-comment" name="form-comment" rows="3" minlength="1" maxlength="1000" placeholder="Type to comment" data-offline-disabled="false"></textarea>
                                         </div>
                                     </div>
 
@@ -271,7 +270,7 @@
                             <p class="mx-0 mt-0 mb-1 p-0 fw-bold"><i class="fa-solid fa-person me-2"></i>Name</p>
                             <form>
                                 <div class="mb-3">
-                                    <input type="text" class="form-control form-control-sm rounded-4 shadow-sm" id="form-name" minlength="2" maxlength="50" name="form-name" oninput="undangan.admin.enableButtonName()" autocomplete="name" data-offline-disabled="false">
+                                    <input dir="auto" type="text" class="form-control form-control-sm rounded-4 shadow-sm" id="form-name" minlength="2" maxlength="50" name="form-name" oninput="undangan.admin.enableButtonName()" autocomplete="name" data-offline-disabled="false">
                                 </div>
                             </form>
 

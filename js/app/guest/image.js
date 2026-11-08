@@ -13,8 +13,6 @@ export const image = (() => {
      */
     let c = null;
 
-    let hasSrc = false;
-
     /**
      * @type {object[]}
      */
@@ -39,6 +37,7 @@ export const image = (() => {
     const appendImage = (el, src) => loadedImage(src).then((img) => {
         el.width = img.naturalWidth;
         el.height = img.naturalHeight;
+        el.classList.remove('opacity-0');
         el.src = img.src;
         img.remove();
 
@@ -82,36 +81,35 @@ export const image = (() => {
     /**
      * @returns {boolean}
      */
-    const hasDataSrc = () => hasSrc;
+    const hasDataSrc = () => Array.from(images).some((i) => i.hasAttribute('data-src'));
 
     /**
      * @returns {Promise<void>}
      */
     const load = async () => {
-        const arrImages = Array.from(images);
+        const imgs = Array.from(images);
 
-        arrImages.filter((el) => el.getAttribute('data-fetch-img') !== 'high').forEach((el) => {
-            el.hasAttribute('data-src') ? getByFetch(el) : getByDefault(el);
-        });
+        /**
+         * @param {function} filter 
+         * @returns {Promise<void>}
+         */
+        const runGroup = async (filter) => {
+            urlCache.length = 0;
+            imgs.filter(filter).forEach((el) => el.hasAttribute('data-src') ? getByFetch(el) : getByDefault(el));
+            await c.run(urlCache, progress.getAbort());
+        };
 
-        if (!hasSrc) {
-            return;
-        }
-
-        await c.open();
-        await Promise.allSettled(arrImages.filter((el) => el.getAttribute('data-fetch-img') === 'high').map((el) => {
-            return c.get(el.getAttribute('data-src'), progress.getAbort())
-                .then((i) => appendImage(el, i))
-                .then(() => el.classList.remove('opacity-0'));
-        }));
-        await c.run(urlCache, progress.getAbort());
+        await runGroup((el) => el.hasAttribute('fetchpriority'));
+        await runGroup((el) => !el.hasAttribute('fetchpriority'));
     };
 
     /**
      * @param {string} blobUrl 
-     * @returns {Promise<Response>}
+     * @returns {void}
      */
-    const download = (blobUrl) => c.download(blobUrl, `image_${Date.now()}`);
+    const download = (blobUrl) => {
+        c.download(blobUrl, `${window.location.hostname}_image_${Date.now()}`);
+    };
 
     /**
      * @returns {object}
@@ -119,9 +117,7 @@ export const image = (() => {
     const init = () => {
         c = cache('image').withForceCache();
         images = document.querySelectorAll('img');
-
         images.forEach(progress.add);
-        hasSrc = Array.from(images).some((i) => i.hasAttribute('data-src'));
 
         return {
             load,

@@ -31,30 +31,24 @@ export const video = (() => {
         vid.className = wrap.getAttribute('data-vid-class');
         vid.loop = true;
         vid.muted = true;
-        vid.controls = true;
+        vid.controls = false;
         vid.autoplay = false;
         vid.playsInline = true;
         vid.preload = 'metadata';
-        vid.disableRemotePlayback = true;
-        vid.disablePictureInPicture = true;
-        vid.controlsList = 'noremoteplayback nodownload noplaybackrate';
 
         const observer = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting ? vid.play() : vid.pause()));
 
         /**
-         * @param {Response} res 
-         * @returns {Promise<Response>}
+         * @param {Blob} b
+         * @returns {void}
          */
-        const resToVideo = (res) => {
-            vid.addEventListener('loadedmetadata', () => {
-                vid.style.removeProperty('height');
-                document.getElementById('video-love-stroy-loading')?.remove();
-            }, { once: true });
-
-            return res.clone().blob().then((b) => {
-                vid.src = URL.createObjectURL(b);
-                return res;
-            });
+        const prepareVideo = (b) => {
+            vid.preload = 'auto';
+            vid.controls = true;
+            vid.disableRemotePlayback = true;
+            vid.disablePictureInPicture = true;
+            vid.controlsList = 'noremoteplayback nodownload noplaybackrate';
+            vid.src = URL.createObjectURL(b);
         };
 
         /**
@@ -64,72 +58,70 @@ export const video = (() => {
             const bar = document.getElementById('progress-bar-video-love-stroy');
             const inf = document.getElementById('progress-info-video-love-stroy');
 
-            return request(HTTP_GET, src)
-                .withCancel(new Promise((re) => vid.addEventListener('undangan.video.prefetch', re, { once: true })))
-                .default({ 'Range': 'bytes=0-1' })
-                .then((res) => {
-                    vid.dispatchEvent(new Event('undangan.video.prefetch'));
+            return request(HTTP_GET, src).withNoBody().default({ 'Range': 'bytes=0-1' }).then((res) => {
 
-                    if (res.status === HTTP_STATUS_OK) {
-                        vid.preload = 'none';
-
-                        vid.src = util.escapeHtml(src);
-                        wrap.appendChild(vid);
-
-                        return Promise.resolve();
-                    }
-
-                    if (res.status !== HTTP_STATUS_PARTIAL_CONTENT) {
-                        throw new Error('failed to fetch video');
-                    }
-
-                    vid.addEventListener('error', () => progress.invalid('video'), { once: true });
-                    const loaded = new Promise((r) => vid.addEventListener('loadedmetadata', r, { once: true }));
-
+                if (res.status === HTTP_STATUS_OK) {
+                    vid.preload = 'none';
                     vid.src = util.escapeHtml(src);
                     wrap.appendChild(vid);
 
-                    return loaded;
-                })
-                .then(() => {
-                    progress.complete('video');
+                    return Promise.resolve();
+                }
 
-                    const height = vid.getBoundingClientRect().width * (vid.videoHeight / vid.videoWidth);
-                    vid.style.height = `${height}px`;
+                if (res.status !== HTTP_STATUS_PARTIAL_CONTENT) {
+                    throw new Error('failed to fetch video');
+                }
 
-                    return request(HTTP_GET, vid.src)
-                        .withProgressFunc((a, b) => {
-                            const result = Number((a / b) * 100).toFixed(0) + '%';
+                vid.addEventListener('error', () => progress.invalid('video'));
+                const loaded = new Promise((r) => vid.addEventListener('loadedmetadata', r, { once: true }));
 
-                            bar.style.width = result;
-                            inf.innerText = result;
-                        })
-                        .withRetry()
-                        .default()
-                        .then(resToVideo)
-                        .catch((err) => {
-                            bar.style.backgroundColor = 'red';
-                            inf.innerText = `Error loading video`;
-                            console.error(err);
-                        })
-                        .finally(() => observer.observe(vid));
-                });
+                vid.src = util.escapeHtml(src);
+                wrap.appendChild(vid);
+
+                return loaded;
+            }).then(() => {
+                vid.pause();
+                vid.currentTime = 0;
+                progress.complete('video');
+
+                const height = vid.getBoundingClientRect().width * (vid.videoHeight / vid.videoWidth);
+                vid.style.height = `${height}px`;
+                wrap.style.height = `${height}px`;
+
+                return request(HTTP_GET, src).withRetry().withProgressFunc((a, b) => {
+                    const result = Number((a / b) * 100).toFixed(0) + '%';
+
+                    bar.style.width = result;
+                    inf.innerText = result;
+                }).default();
+            }).then((res) => res.clone().blob().then((b) => {
+                const loaded = new Promise((r) => vid.addEventListener('loadedmetadata', r, { once: true }));
+                prepareVideo(b);
+                vid.load();
+                return loaded.then(() => res);
+            })).catch((err) => {
+                bar.style.backgroundColor = 'red';
+                inf.innerText = `Error loading video`;
+                console.error(err);
+            });
         };
-
-        if (!window.isSecureContext) {
-            return fetchBasic();
-        }
 
         return c.has(src).then((res) => {
             if (!res) {
                 return c.del(src).then(fetchBasic).then((r) => c.set(src, r));
             }
 
-            progress.complete('video');
-            return resToVideo(res).finally(() => {
+            return res.blob().then((b) => {
+                const loaded = new Promise((r) => vid.addEventListener('loadedmetadata', r, { once: true }));
+                prepareVideo(b);
                 wrap.appendChild(vid);
-                observer.observe(vid);
+                return loaded.then(() => progress.complete('video'));
             });
+        }).then(() => {
+            observer.observe(vid);
+            vid.style.removeProperty('height');
+            wrap.style.removeProperty('height');
+            document.getElementById('video-love-stroy-loading')?.remove();
         });
     };
 
