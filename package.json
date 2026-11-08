@@ -4,8 +4,8 @@
         "eslint": "^9.37.0",
         "fs-extra": "^11.3.2",
         "globals": "^16.4.0",
-        "htmlhint": "^1.7.1",
-        "madge": "^8.0.0",
+        "htmlhint": "^1.7.0",
+        "madge": "^7.0.0",
         "stylelint": "^16.25.0",
         "stylelint-config-recommended": "^17.0.0"
     },
@@ -19,5 +19,8 @@
     },
     "dependencies": {
         "esbuild": "^0.25.10"
+    },
+    "allowScripts": {
+        "esbuild@0.25.12": true
     }
 }
